@@ -1,0 +1,16 @@
+# Build system
+*.d
+build*/
+
+# Binaries
+*.o
+*.a
+*.so
+*.so.*
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Execution artifacts
+rx_images/

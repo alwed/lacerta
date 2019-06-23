@@ -14,6 +14,32 @@ Key differences from Wenet
 - temporal diversity for telemetry packets
 - GPU accelerated image scaling
 
+Setup of a receiver station
+------------------------
+
+### Dependencies
+
+- Computer, not too slow (eg. Raspberry Pi 3) with GNU/Linux
+- SDR receiver and software that dumps raw samples into a pipe (eg. rtl-sdr)
+- C toolchain
+- >=python-3.5
+- [csdr](https://github.com/simonyiszk/csdr)
+
+### Build and run
+
+Build all binaries used by a ground station:
+
+```
+make -C src/
+```
+
+Adapt `scripts/rx.sh` if necessary. Adjust the frequency, your callsign /
+listener name and enable image and telemetry upload as desired.
+
+SSDV packets are grouped into images and saved in a `rx_images` directory.
+Telemetry and text packets are broadcasted via UDP and can be monitored with
+`scripts/pits_client.py`
+
 Protocol specification
 ----------------------
 

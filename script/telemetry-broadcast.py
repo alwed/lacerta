@@ -32,7 +32,7 @@ def broadcast_packet(sock, data):
 
     # Send to broadcast if we can.
     try:
-    	sock.sendto(json.dumps(data).encode(), ('<broadcast>', WENET_TELEMETRY_UDP_PORT))
+        sock.sendto(json.dumps(data).encode(), ('127.255.255.255', WENET_TELEMETRY_UDP_PORT))
     except socket.error:
     	sock.sendto(json.dumps(data).encode(), ('127.0.0.1', WENET_TELEMETRY_UDP_PORT))
 

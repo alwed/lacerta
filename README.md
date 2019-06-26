@@ -22,8 +22,10 @@ Setup of a receiver station
 - Computer, not too slow (eg. Raspberry Pi 3) with GNU/Linux
 - SDR receiver and software that dumps raw samples into a pipe (eg. rtl-sdr)
 - C toolchain
-- >=python-3.5
+- python-3.5 or later
 - [csdr](https://github.com/simonyiszk/csdr)
+
+- python-2.7 and pyqtgraph (for fskdemodgui)
 
 ### Build and run
 
@@ -54,6 +56,7 @@ Frequency shift keying:
 ### Frame Structure
 
 | preamble	| payload	| CRC	| LDPC	|
+|-----------|---------|-----|-------|
 | 32		| 2048		| 16	| 516	|
 
 - Sizes in bits

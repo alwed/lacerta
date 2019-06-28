@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from base64 import b64encode
 from hashlib import sha256
+import signal
 from http.client import HTTPConnection, HTTPException
 
 from pits_info import pits_info
@@ -15,6 +16,10 @@ WENET_TELEMETRY_UDP_PORT    = 7891
 PITS_INFO_PACKET_ID         = 0x80
 
 upload_queue = queue.Queue()
+
+def sigterm_handler(_signo, _stack_frame):
+    # Raises SystemExit(0):
+    sys.exit(0)
 
 def gps_fix_str(fix):
     if fix == 0:
@@ -99,7 +104,7 @@ class HabitatUploader(threading.Thread):
                 if res.status == 201:
                     print("Uploaded to Habitat successfully")
                 else:
-                    print("%d: %s\n\t%s" % (res.status, res.reason, r.decode()))
+                    print("Habitat: %d: %s\n\t%s" % (res.status, res.reason, r.decode()))
                 upload_queue.task_done()
 
             except queue.Empty:
@@ -107,7 +112,7 @@ class HabitatUploader(threading.Thread):
             except (HTTPException, OSError) as e:
                 upload_queue.put(data)
                 c.close()
-                print("Failed to upload to Habitat:\n\t%s %s" % (
+                print("Failed to upload to Habitat: %s %s" % (
                     type(e), str(e)))
                 time.sleep(10)
 
@@ -117,6 +122,8 @@ if __name__ == "__main__":
         usercall = sys.argv[1]
     else:
         usercall = "anonymous"
+
+    signal.signal(signal.SIGTERM, sigterm_handler)
 
     upload_thrd = HabitatUploader()
     upload_thrd.start()
@@ -148,7 +155,7 @@ if __name__ == "__main__":
 
         except socket.timeout:
             continue
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             break
         except Exception as e:
             print("Error in UDP-Listener:", str(e))

@@ -7,6 +7,7 @@ import sys, os, glob
 import traceback
 import json
 import threading, queue
+import signal
 from http.client import HTTPConnection, HTTPException
 
 #ssdv_url = "http://ssdv.habhub.org/api/v0/packets"
@@ -14,6 +15,10 @@ ssdv_host = "ssdv.habhub.org"
 ssdv_url = "/api/v0/packets"
 
 upload_queue = queue.Queue(4096) # Limit memory consumption, as images are on disk, too
+
+def sigterm_handler(_signo, _stack_frame):
+    # Raises SystemExit(0):
+    sys.exit(0)
 
 def ssdv_queue(packets, mycall="N0CALL"):
     encoded_pkgs = []
@@ -67,7 +72,7 @@ class ssdvUploader(threading.Thread):
                 if res.status == 200:
                     print("Uploaded to habhub successfully")
                 else:
-                    print("%d: %s\n\t%s" % (res.status, res.reason, r.decode()))
+                    print("SSDV: %d: %s\n\t%s" % (res.status, res.reason, r.decode()))
                 upload_queue.task_done()
                 data = None
 
@@ -75,7 +80,7 @@ class ssdvUploader(threading.Thread):
                 continue
             except (HTTPException, OSError) as e:
                 c.close()
-                print("Failed to upload to habhub:\n\t%s %s" % (
+                print("Failed to upload to habhub: %s %s" % (
                     type(e), str(e)))
                 time.sleep(10)
 
@@ -114,7 +119,7 @@ def ssdv_dir_watcher(glob_string="./rx_images/*.ssdv", check_time = 0.5, callsig
                 ssdv_upload_file(filename,callsign=callsign)
 
             rx_images = rx_images_temp
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             return
         except:
             traceback.print_exc()
@@ -130,6 +135,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print("Using callsign: %s" % callsign)
+
+    signal.signal(signal.SIGTERM, sigterm_handler)
 
     upload_thrd = ssdvUploader()
     upload_thrd.start()

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 void ssdv_dec_call(uint32_t code, char *call)
@@ -22,6 +24,10 @@ int main(int argc, char **argv)
 	char call_last[6] = {0};
 	int iid_last = -1;
 
+	if (mkdir("rx_images", 0777) != 0 && errno != EEXIST) {
+		perror("Failed creating directory rx_images");
+		return 1;
+	}
 
 	if (chdir("rx_images") != 0) {
 		perror("Failed changing to rx_images");

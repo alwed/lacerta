@@ -26,17 +26,24 @@ Setup of a receiver station
 - [csdr](https://github.com/simonyiszk/csdr)
 
 - python-2.7 and pyqtgraph (for fskdemodgui)
+- horusbinary (for tandem reception)
 
 ### Build and run
 
 Build all binaries used by a ground station:
 
 ```
-make -C src/
+$ make -C src/
 ```
 
-Adapt `scripts/rx.sh` if necessary. Adjust the frequency, your callsign /
-listener name and enable image and telemetry upload as desired.
+Adapt `scripts/rx[-tandem].sh` if necessary. Adjust the frequency, set your
+callsign or listener name and enable image and telemetry upload as desired.
+
+Run the receiver skript from the root:
+```
+$ script/rx.sh
+```
+Use `rx_tandem.sh` to decode an additional payload with the same SDR input.
 
 SSDV packets are grouped into images and saved in a `rx_images` directory.
 Telemetry and text packets are broadcasted via UDP and can be monitored with

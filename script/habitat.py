@@ -8,6 +8,7 @@ from datetime import datetime
 from base64 import b64encode
 from hashlib import sha256
 import signal
+import random
 from http.client import HTTPConnection, HTTPException
 
 from pits_info import pits_info
@@ -103,6 +104,10 @@ class HabitatUploader(threading.Thread):
                 r = res.read()
                 if res.status == 201:
                     print("Uploaded to Habitat successfully")
+                elif res.status == 409:
+                    print("Update conflict, retrying")
+                    time.sleep(random.random())
+                    upload_queue.put(data)
                 else:
                     print("Habitat: %d: %s\n\t%s" % (res.status, res.reason, r.decode()))
                 upload_queue.task_done()

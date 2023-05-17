@@ -71,7 +71,7 @@ class pits_info(object):
         self.lat = 0
         self.lon = 0
         self.alt = 0
-        self.alt_max = -100000
+        self.alt_max = 42
         self.speed_g = 0
         self.speed_v = 0
         self.heading = 0
@@ -105,7 +105,7 @@ class pits_info(object):
             self.alt *= 1e-3
             self.alt_max *= 1e-3
             self.speed_g *= 1e-2
-            self.speed_v *= -1e-2
+            self.speed_v *= 1e-2
             self.heading *= 1e-5
             self.Ts *= 2**-6
             self.Ti *= 2**-6

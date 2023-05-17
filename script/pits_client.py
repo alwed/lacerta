@@ -75,8 +75,8 @@ def main(stdscr):
             pits.alt, pits.alt_max)).ljust(30))
         pitswin.addstr(7,1, ("Speed:\t\tH %.0f km/h  V %+.0f m/s" % (
             pits.speed_g * 3.6, pits.speed_v)).ljust(30))
-        pitswin.addstr(8,1, "GPS Fix:\t%s\t%d" % (
-            pits.gpsFix, pits.dynamic_model))
+        pitswin.addstr(8,1, "GPS Fix:\t%s SV %d  Mode %d" % (
+            pits.gpsFix, pits.numSV, pits.dynamic_model))
 
         pitswin.addstr(10,1, "Temperatures:")
         pitswin.addstr(11,1, ("  System:\t% 5.2f °C" % decT(pits.Ts)).ljust(30))

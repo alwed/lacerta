@@ -43,7 +43,7 @@ gps = UBlox("/dev/i2c-3", timeout=2)
 #gps = UBlox("/dev/ttyACM0", timeout=2)
 
 update_rate_ms = 1000
-dynamic_model = DYNAMIC_MODEL_PORTABLE #DYNAMIC_MODEL_AIRBORNE1G
+dynamic_model = DYNAMIC_MODEL_AIRBORNE1G
 
 setup_ublox()
 
@@ -56,7 +56,7 @@ rx_running = True
 rx_counter = 0
 
 gps_struct = struct.Struct("@QIIIIIiiH")
-alt_max = -10000
+alt_max = 0
 
 while rx_running:
     try:
@@ -95,7 +95,7 @@ while rx_running:
         latitude = msg.Latitude #*1.0e-7
         longitude = msg.Longitude #*1.0e-7
         altitude = msg.hMSL #msg.height #*1.0e-3
-        if altitude > alt_max:
+        if altitude > alt_max and gpsFix == 3:
             alt_max = altitude
 
     elif msg.name() == "NAV_VELNED":
@@ -126,13 +126,21 @@ while rx_running:
             gps.set_preferred_dynamic_model(dynamic_model)
 
         timestamp = gps2unix_ms(week, iTOW, leapS)
-        #time = datetime.utcfromtimestamp(timestamp // 1000)
         gps_status = (numSV << 10) & 0xFC00 | \
                      (gpsFix << 8) & 0x0300 | \
                      dynamic_model & 0x00FF
+        if altitude < 0:
+            altitude = 42
+        if latitude < 0:
+            latitude = 0
+        if longitude < 0:
+            longitude = 0
+        if ground_speed < 0:
+            ground_speed = 0
 
+        #prettytime = datetime.utcfromtimestamp(timestamp // 1000)
         #print("%d %3d %10.7f %10.7f %8.3f %s %d" % (gpsFix, numSV,
-        #        latitude * 1e-7, longitude * 1e-7, altitude * 1e-3, time, iTOW),
+        #        latitude * 1e-7, longitude * 1e-7, altitude * 1e-3, prettytime, iTOW),
         #        end='\r')
 
         gps_struct.pack_into(shm, 0,

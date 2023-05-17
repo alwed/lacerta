@@ -19,7 +19,7 @@ class Rfm98wFsk(object):
     ]
 
     config_tx = [
-    	0x88,			# 10dBm
+    	0x8f,			# 17dBm
     	0x09,			# no shaping, 40µs PA ramp
     	0x1B			# 100mA OCP
     ]
@@ -39,7 +39,7 @@ class Rfm98wFsk(object):
         self.register_write(0x25, self.config_packet)
         self.register_write(0x24, [0x07])	# RC osc off
         self.register_write(0x3B, [0x02])	# no automatic receiver calibration
-        #self.register_write(0x5D, [0x0A])	# BitrateFrac
+        #self.register_write(0x5D, [0x06])	# BitrateFrac
 
 
     def __del__(self):

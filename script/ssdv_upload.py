@@ -1,148 +1,95 @@
 #!/usr/bin/env python3
-
-import base64
-import time
-import datetime
-import sys, os, glob
-import traceback
+import glob
 import json
-import threading, queue
-import signal
+import base64
+import os, os.path
+import datetime
+import time
+import sys
 from http.client import HTTPConnection, HTTPException
+import signal
 
-#ssdv_url = "http://ssdv.habhub.org/api/v0/packets"
-ssdv_host = "ssdv.habhub.org"
-ssdv_url = "/api/v0/packets"
-
-upload_queue = queue.Queue(4096) # Limit memory consumption, as images are on disk, too
+host = "ssdv.habhub.org"
+resource = "/api/v0/packets"
+glob_string = "./rx_images/*.ssdv"
+target_dir = "./rx_images/uploaded/"
+headers = {"Host": host, "Content-Type" : "application/json"}
 
 def sigterm_handler(_signo, _stack_frame):
     # Raises SystemExit(0):
     sys.exit(0)
 
-def ssdv_queue(packets, mycall="N0CALL"):
-    encoded_pkgs = []
-    for p in packets:
-        encoded_pkgs.append({
-                "type":     "packet",
-                "packet":   base64.b64encode(p).decode('ascii'),
-                "encoding": "base64",
-                "received": datetime.datetime.utcnow()
-                                    .strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "receiver": mycall
-            })
+def encode_images(rx_images, usercall):
+    data = {"type" : "packets", "packets" : []}
 
-    post_data = {
-            "type":     "packets",
-            "packets":  encoded_pkgs
-    }
-
-    upload_queue.put(post_data)
-
-class ssdvUploader(threading.Thread):
-    def __init__(self):
-        self.running = False
-        return super().__init__()
-
-    def start(self):
-        self.running = True
-        return super().start()
-
-    def join(self):
-        self.running = False
-        super().join()
-
-    def run(self):
-        data = None
-        c = HTTPConnection(ssdv_host, timeout=10)
-        while self.running:
-            try:
-                if data is None:
-                    data = upload_queue.get(timeout = 2)
-
-                c.request(
-                    "POST",
-                    ssdv_url,
-                    json.dumps(data),
-                    {"Content-Type": "application/json"}
-                )
-
-                res = c.getresponse()
-                r = res.read()
-                if res.status == 200:
-                    print("Uploaded to habhub successfully")
-                else:
-                    print("SSDV: %d: %s\n\t%s" % (res.status, res.reason, r.decode()))
-                upload_queue.task_done()
-                data = None
-
-            except queue.Empty:
-                continue
-            except (HTTPException, OSError) as e:
-                c.close()
-                print("Failed to upload to habhub: %s %s" % (
-                    type(e), str(e)))
-                time.sleep(10)
-
-def ssdv_upload_file(filename, callsign="N0CALL"):
-    with open(filename, "rb") as f:
-        b = f.read()
+    for path in rx_images:
+        date = datetime.datetime.utcfromtimestamp(os.path.getmtime(path)) \
+               .strftime("%Y-%m-%dT%H:%M:%SZ")
+        with open(path, "rb") as f:
+            b = f.read()
         if len(b) > 0 and len(b) % 256 == 0:
             pkgs = (b[i:i+256] for i in range(0, len(b), 256))
             print("Uploading %d packages... " % (len(b) // 256), file=sys.stderr)
-            ssdv_queue(pkgs, callsign)
+            for p in pkgs:
+                pkg_data = base64.b64encode(p).decode('ascii')
+                pkg = {
+                        "type" : "packet",
+                        "packet" : pkg_data,
+                        "encoding" : "base64",
+                        "received" : date,
+                        "receiver" : usercall
+                }
+                data["packets"].append(pkg)
 
-def ssdv_dir_watcher(glob_string="./rx_images/*.ssdv", check_time = 0.5, callsign="N0CALL"):
-    # Check what's there now..
-    rx_images = glob.glob(glob_string)
-    print("Starting directory watch...")
-
-    while True:
-        try:
-            time.sleep(check_time)
-
-            # Check directory again.
-            rx_images_temp = glob.glob(glob_string)
-            if len(rx_images_temp) == 0:
-                continue
-            # Sort list. Image filenames are timestamps, so the last element in the array will be the latest image.
-            rx_images_temp.sort()
-            # Is there an new image?
-            #if rx_images_temp[-1] not in rx_images:
-            new_images = set(rx_images_temp) - set(rx_images)
-            if len(new_images) > 0:
-                # New image! Wait a little bit in case we're still writing to that file, then upload.
-                time.sleep(0.5)
-            for filename in new_images:
-                #filename = rx_images_temp[-1]
-                print("Found new image! Uploading: %s " % filename)
-                ssdv_upload_file(filename,callsign=callsign)
-
-            rx_images = rx_images_temp
-        except (KeyboardInterrupt, SystemExit):
-            return
-        except:
-            traceback.print_exc()
-            continue
+    return json.dumps(data, indent=4).encode("utf-8")
 
 if __name__ == "__main__":
     try:
-        callsign = sys.argv[1]
-        if len(callsign) > 9:
-            callsign = callsign[:9]
-    except:
-        print("Usage: python ssdv_upload.py CALLSIGN &")
-        sys.exit(1)
-
-    print("Using callsign: %s" % callsign)
+        usercall = os.environ["MYCALL"]
+    except KeyError:
+        usercall = "anonymous"
+    if len(sys.argv) > 1:
+        usercall = sys.argv[1]
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
-    upload_thrd = ssdvUploader()
-    upload_thrd.start()
+    try:
+        os.mkdir(target_dir)
+    except FileExistsError:
+        pass
 
-    ssdv_dir_watcher(callsign=callsign)
+    conn = HTTPConnection(host, timeout=10)
+    while True:
+        try:
+            time.sleep(1)
+            rx_images = glob.glob(glob_string)
+            if len(rx_images) == 0:
+                continue
+            rx_images.sort()
+            # New image! Wait a little bit in case we're still writing to that file, then upload.
+            time.sleep(0.5)
+            data = encode_images(rx_images, usercall)
 
-    ssdv_upload_file("rx_images/rx.tmp", callsign)
-    upload_queue.join()
-    upload_thrd.join()
+            while True:
+                try:
+                    conn.request("POST", resource, data, headers)
+
+                    res = conn.getresponse()
+                    if res.status == 200:
+                        print("SSDV upload successful")
+                    else:
+                        print("Sondehub: %d: %s\n\t%s" % (res.status, res.reason, res.decode()))
+                    break
+                except (HTTPException, OSError) as e:
+                    conn.close()
+                    print("Failed to upload to Sondehub: %s %s" % (
+                    type(e), str(e)))
+                    time.sleep(10)
+
+            conn.close()
+            # Move uploaded images to the archive, so that they are not uploaded again
+            for path in rx_images:
+                os.replace(path, os.path.join(target_dir, os.path.basename(path)))
+
+        except (KeyboardInterrupt, SystemExit):
+            break

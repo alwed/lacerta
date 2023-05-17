@@ -3,7 +3,7 @@
 import time
 import picamera
 
-res_true = (2592, 1944)	# PiCam V1
+res_true = (3280, 2464)	# PiCam V2
 n = 21 # 1080p Monitor
 res_send = (n * 4 * 16, n * 3 * 16)
 

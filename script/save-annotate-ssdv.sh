@@ -11,14 +11,14 @@ quality=6
 # w = n * 4 * 16; h = n * 3 * 16
 #res_send=1408x1056 # n = 22
 # PiCam v1
-res_true=2592x1944
-res_yuv=2592x1952
+#res_true=2592x1944
+#res_yuv=2592x1952
 # PiCam v2
 #res_true=3280x2464
 #res_yuv=3296x2464
 
 logo=DARC_Logo.png
-logo2=KA_NG50.png
+logo2=""
 
 id=0
 while [ -e $id.jpg ] ; do

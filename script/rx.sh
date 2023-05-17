@@ -8,8 +8,8 @@ PATH=$PATH:"$mydir":"$mydir/../build"
 MYCALL=DL2IK
 
 # Disable as desired
-habitat.py $MYCALL &
-ssdv_upload.py $MYCALL &
+sondehub.py &
+ssdv_upload.py &
 
 # Adjust frequency (f_c - 100kHz) to payload
 # fskdemodgui can be disabled, eg. on headless systems

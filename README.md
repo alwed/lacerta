@@ -22,11 +22,10 @@ Setup of a receiver station
 - Computer, not too slow (eg. Raspberry Pi 3) with GNU/Linux
 - SDR receiver and software that dumps raw samples into a pipe (eg. rtl-sdr)
 - C toolchain
-- python-3.5 or later
+- python-3
 - [csdr](https://github.com/simonyiszk/csdr)
-
-- python-2.7 and pyqtgraph (for fskdemodgui)
-- horusbinary (for tandem reception)
+- pyqtgraph (for fskdemodgui)
+- [horusdemodlib](https://github.com/projecthorus/horusdemodlib) (for tandem reception)
 
 ### Build and run
 
@@ -107,7 +106,7 @@ Each octet `(D7, D6, …, D0)` of a frame is transmitted as `(0, D7, …, D0, 1)
 #### SSDV Packet
 
 - Packet Type = 0x55
-- see <https://ukhas.org.uk/guides:ssdv>
+- see <https://ukhas.org.uk/doku.php?id=guides:ssdv>
 
 #### Telemetry Packet
 

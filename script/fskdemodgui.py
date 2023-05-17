@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 #	fsk_demod Statistics GUI
 #	Accepts the stats output from fsk_demod on stdin, and plots it.
@@ -9,14 +9,21 @@
 #	updates at about 10Hz. Anything faster will fill up the input queue and be discarded.
 #
 #	Call using:
-#	<producer>| ./fsk_demod 2X 8 923096 115387 - - S 2> >(python ~/Dev/codec2-dev/octave/fskdemodgui.py) | <consumer>
+#	<producer>| ./fsk_demod --cu8 -s --stats=100 2 $SDR_RATE $BAUD_RATE - - 2> >(python fskdemodgui.py --wide) | <consumer>
 #
 #
-import sys, time, json, Queue, argparse
+import sys, time, json, argparse
 from threading import Thread
-from pyqtgraph.Qt import QtGui, QtCore
+from pyqtgraph.Qt import QtWidgets, QtCore
 import numpy as np
 import pyqtgraph as pg
+
+try:
+    # Python 2
+    from Queue import Queue
+except ImportError:
+    # Python 3
+    from queue import Queue
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--wide", action="store_true", default=False, help="Alternate wide arrangement of widgets, for placement at bottom of 4:3 screen.")
@@ -28,9 +35,10 @@ history_size = 100 # 10 seconds at 10Hz...
 history_scale = np.linspace((-1*history_size+1)/float(update_rate),0,history_size)
 
 # Input queue
-in_queue = Queue.Queue(1) # 1-element FIFO...
+in_queue = Queue(1) # 1-element FIFO...
 
-win = pg.GraphicsWindow()
+app = QtWidgets.QApplication([])
+win = pg.GraphicsLayoutWidget()
 win.setWindowTitle('FSK Demodulator Modem Statistics')
 
 
@@ -41,7 +49,8 @@ if args.wide == False:
 	win.nextRow()
 else:
 	win.resize(1024,200)
-fest_plot =pg.PlotItem() # win.addPlot(title="Tone Frequency Estimation")
+#fest_plot =pg.PlotItem() # win.addPlot(title="Tone Frequency Estimation")
+fest_plot = win.addPlot(title="Tone Frequency Estimation")
 eye_plot = win.addPlot(title="Eye Diagram")
 # Disable auto-ranging on eye plot and fix axes for a big speedup...
 spec_plot = win.addPlot(title="Spectrum")
@@ -86,7 +95,7 @@ def update_plots():
 		in_data = json.loads(in_data)
 	except Exception as e:
 
-		sys.stderr.write(str(e))
+		sys.stderr.write(str(e).encode('ascii'))
 		return
 
 	# Roll data arrays
@@ -150,13 +159,13 @@ def update_plots():
 			eye_xr = len(eye_data[0]) - 1
 			eye_plot.setXRange(0,len(eye_data[0])-1)
 
+
 	except Exception as e:
 		pass
 
-
 timer = pg.QtCore.QTimer()
 timer.timeout.connect(update_plots)
-timer.start(1000/update_rate)
+timer.start(int(1000/update_rate))
 
 
 # Thread to read from stdin and push into a queue to be processed.
@@ -175,15 +184,18 @@ def read_input():
 		if not in_queue.full():
 			in_queue.put_nowait(in_line)
 
+
 read_thread = Thread(target=read_input)
 read_thread.daemon = True # Set as daemon, so when all other threads die, this one gets killed too.
 read_thread.start()
+
+win.show()
 
 ## Start Qt event loop unless running in interactive mode or using pyside.
 if __name__ == '__main__':
 	import sys
 	if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
 		try:
-			QtGui.QApplication.instance().exec_()
+			app.exec()
 		except KeyboardInterrupt:
 			sys.exit(0)

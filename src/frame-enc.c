@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	uint8_t *coded_bytes = &uart_buf[12];
 
 	/* Setup UART */
-	FILE *uart = fopen("/dev/ttyAMA0", "r+");
+	FILE *uart = fopen("/dev/ttyAMA0", "w");
 	if (!uart) {
 		perror("fopen");
 		return 2;

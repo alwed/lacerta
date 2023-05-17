@@ -27,7 +27,7 @@ def decT(c):
     return c - 273.15
 
 def decode_text(packet):
-    return packet[4:4+packet[1]].decode()
+    return packet[1:].partition(b'\0')[0].decode()
 
 from textwrap import wrap
 import time
@@ -121,12 +121,12 @@ def udp_listener():
         try:
             m = s.recv(2048).decode()
             m = json.loads(m)
-            m = bytes(m["packet"])
-            #if m[0] == 0x00:
-            #    logtext(decode_text(m))
+            m = bytearray(m["packet"])
             if m[0] == 0x80:
                 decode_pits_info(m)
                 #logtext(str(pits.time))
+            elif m[1] == 0x79:
+                logtext(decode_text(m))
             else:
                 #logtext("%02X %d" % (m[0], len(m)))
                 continue

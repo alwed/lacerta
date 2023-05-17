@@ -32,7 +32,7 @@ def ceildiv(a, b):
 
 image_queue = queue.Queue()
 
-text_message = bytearray(127)
+text_message = b""
 last_telemetry_pkg = get_telemetry()
 dummy_frame = b"\xFF" + os.urandom(255)
 
@@ -46,8 +46,18 @@ def format_telemetry_payload():
     frame = bytearray(256)
     frame[:64] = t2
     frame[64:128] = t1
-    frame[128] = 0x79
-    frame[129:] = text_message
+
+    try:
+        lt = len(text_message)
+    except:
+        lt = 0
+    if lt > 0:
+        frame[128] = 0x79
+        frame[129:129+lt] = text_message[:127]
+        if lt < 126:
+            frame[129+lt+1] = os.urandom(127 - lt)
+    else:
+        frame[128:] = dummy_frame[:128]
 
     return frame
 
@@ -67,8 +77,10 @@ class ImageHandler(threading.Thread):
     def run(self):
         while self.running:
             if image_queue.empty() and os.path.exists(ssdv_path):
+                time.sleep(.5)
                 npkgs = os.path.getsize(ssdv_path) // 256
                 nchks = ceildiv(npkgs, chunksize)
+                #print(npkgs, file=sys.stderr)
 
                 with open(ssdv_path, "rb") as f:
                     for i in range(nchks):
@@ -96,8 +108,9 @@ try:
         except queue.Empty:
             for _ in range(chunksize):
                 txfo.write(dummy_frame)
-except:
+except (KeyboardInterrupt, SystemExit):
     pass
+
 finally:
     txfo.write(dummy_frame)
     time.sleep(1)

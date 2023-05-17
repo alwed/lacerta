@@ -30,11 +30,13 @@ class w1_temp(sens_temp):
     def temp(self):
         self.f.seek(0)
         l = self.f.readlines()
-
-        if l[0].split()[-1] == b"YES":
-           return float(l[1].split()[-1][2:]) / 1000
-        else:
-           return float("NaN")
+        T = float("NaN")
+        try:
+            if l[0].split()[-1] == b"YES":
+               T = float(l[1].split()[-1][2:]) / 1000
+        except Exception as e:
+            print("Error reading 1w temperature:", e, file=sys.stderr)
+        return T
 
 class sys_temp(sens_temp):
     def temp(self):
@@ -49,7 +51,7 @@ class sys_temp(sens_temp):
 def C2pitsK(thita):
     try:
         T = int((thita + 273.15) * 2**6)
-    except ValueError:
+    except:
         T = 0
     return T
 
@@ -59,8 +61,8 @@ if __name__ == "__main__":
     sens_intern = w1_temp(sens_intern_dev)
     sens_extern = w1_temp(sens_extern_dev)
 
-    try:
-        while True:
+    while True:
+        try:
             Ts = C2pitsK(sens_system.temp())
             Ti = C2pitsK(sens_intern.temp())
             Te = C2pitsK(sens_extern.temp())
@@ -70,5 +72,8 @@ if __name__ == "__main__":
 #            print(Ts / 2**6, Ti / 2**6, Te / 2**6)
 
             time.sleep(1)
-    except KeyboardInterrupt:
-        pass
+        except (KeyboardInterrupt, SystemExit):
+            break
+        except Exception as e:
+            #pass
+            print(e, file=sys.stderr)

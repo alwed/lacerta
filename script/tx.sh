@@ -9,7 +9,7 @@ export MYCALL=DK0WT
 
 mkdir -p tx_images
 
-save_anotate_ssdv.sh &
+save-annotate-ssdv.sh &
 gpsd.py &
 temperature.py &
 power &
@@ -17,7 +17,7 @@ pressure &
 
 sleep 1
 
-pkg_source.py | frame-enc
+pkg_source.py | (trap '' INT; frame-enc)
 
-jobs -p | xargs kill
+jobs -rp | xargs kill
 wait

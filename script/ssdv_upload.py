@@ -66,6 +66,12 @@ if __name__ == "__main__":
             if len(rx_images) == 0:
                 continue
             rx_images.sort()
+
+            # Limit the number of images uploaded in one request,
+            # to not overwhelm the server.
+            if len(rx_images) > 10:
+                rx_images = rx_images[:10]
+
             # New image! Wait a little bit in case we're still writing to that file, then upload.
             time.sleep(0.5)
             data = encode_images(rx_images, usercall)
@@ -78,7 +84,7 @@ if __name__ == "__main__":
                     if res.status == 200:
                         print("SSDV upload successful")
                     else:
-                        print("Sondehub: %d: %s\n\t%s" % (res.status, res.reason, res.decode()))
+                        print("Sondehub: %d: %s" % (res.status, res.reason))
                     break
                 except (HTTPException, OSError) as e:
                     conn.close()
@@ -93,3 +99,7 @@ if __name__ == "__main__":
 
         except (KeyboardInterrupt, SystemExit):
             break
+
+        except Exception as e:
+            # In case some error occures in the loop, do not terminate the script
+            print(e)

@@ -69,8 +69,8 @@ if __name__ == "__main__":
 
             # Limit the number of images uploaded in one request,
             # to not overwhelm the server.
-            if len(rx_images) > 10:
-                rx_images = rx_images[:10]
+            if len(rx_images) > 2:
+                rx_images = rx_images[:2]
 
             # New image! Wait a little bit in case we're still writing to that file, then upload.
             time.sleep(0.5)
